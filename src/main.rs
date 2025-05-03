@@ -1,10 +1,27 @@
-fn main() {
-    let args = clap::Command::new("wallpaper-maker")
-        .arg(clap::Arg::new("directory").help("Directory containing images").required(true))
-        .get_matches();
+use clap::Parser;
+use std::fs;
 
-    let path = args.get_one::<String>("directory").expect("Directory is required");
+#[derive(Parser, Debug)]
+#[command(version)]
+struct Args {
+    directory: String,
+}
 
-    let path = path.trim_end_matches('/');
-    println!("{}", path);
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args = Args::parse();
+    let path = get_path(args);
+
+    println!("Reading directory: {}", path);
+
+    for entry in fs::read_dir(path)? {
+        let entry = entry?;
+        println!("{}", entry.path().display());
+    }
+
+    Ok(())
+}
+
+fn get_path(args: Args) -> String {
+    let path = args.directory.trim_end_matches('/').to_string();
+    shellexpand::tilde(path.as_str()).to_string()
 }
