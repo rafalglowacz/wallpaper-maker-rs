@@ -20,9 +20,10 @@ struct Args {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
-    let path = get_path(&args);
+    let source = get_source_path(&args);
+    let target = ensure_target_directory(&source);
 
-    println!("Reading directory: {}", path);
+    println!("Reading directory: {}", source);
     
     if args.delay > 0 {
         println!("Waiting {} seconds...", args.delay);
@@ -31,12 +32,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let image_pattern = Regex::new(r"\.(jpe?g|png|webp)$").unwrap();
 
-    for entry in fs::read_dir(path)? {
+    for entry in fs::read_dir(source)? {
         let entry = entry?;
         let path = entry.path();
         if let Some(path_str) = path.to_str() {
             if image_pattern.is_match(path_str) {
-                make_wallpaper(path_str, args.dest_width, args.dest_height);
+                make_wallpaper(path_str, &target, args.dest_width, args.dest_height);
             }
         }
     }
@@ -44,7 +45,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn make_wallpaper(file_path: &str, dest_width: usize, dest_height: usize) {
+fn ensure_target_directory(source: &String) -> String {
+    let path = Path::new(source);
+    let parent = path.parent().unwrap();
+    let dir_name = path.file_name().unwrap();
+    
+    let adjusted_path = parent.join(format!("{} - adjusted", dir_name.to_str().unwrap()));
+    
+    if !adjusted_path.exists() {
+        fs::create_dir_all(&adjusted_path).unwrap();
+    }
+    
+    adjusted_path.to_str().unwrap().to_string()
+}
+
+fn make_wallpaper(file_path: &str, target_dir: &str, dest_width: usize, dest_height: usize) {
     println!("{}", file_path);
     if let Ok(img) = image::open(file_path) {
         let resized = img.resize(
@@ -68,7 +83,8 @@ fn make_wallpaper(file_path: &str, dest_width: usize, dest_height: usize) {
         imageops::overlay(&mut final_image, &resized.to_rgb8(), x as i64, y as i64);
 
         let output_path = format!(
-            "/tmp/Tapety/{}", 
+            "{}/adjusted - {}",
+            target_dir,
             Path::new(file_path).file_name().unwrap().to_str().unwrap()
         );
         
@@ -80,7 +96,7 @@ fn make_wallpaper(file_path: &str, dest_width: usize, dest_height: usize) {
     }
 }
 
-fn get_path(args: &Args) -> String {
+fn get_source_path(args: &Args) -> String {
     let path = args.directory.trim_end_matches('/').to_string();
     shellexpand::tilde(path.as_str()).to_string()
 }
