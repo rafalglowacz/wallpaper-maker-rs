@@ -8,10 +8,10 @@ use std::time::Duration;
 #[command(version)]
 struct Args {
     directory: String,
-    dest_width: u32,
-    dest_height: u32,
+    dest_width: usize,
+    dest_height: usize,
     #[arg(default_value = "60")]
-    delay: u32,
+    delay: usize,
     #[arg(long, default_value = "false")]
     force: bool,
 }
@@ -34,7 +34,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let path = entry.path();
         if let Some(path_str) = path.to_str() {
             if image_pattern.is_match(path_str) {
-                make_wallpaper(path_str);
+                make_wallpaper(path_str, args.dest_width, args.dest_height);
             }
         }
     }
@@ -42,8 +42,39 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn make_wallpaper(file_path: &str) {
+fn make_wallpaper(file_path: &str, dest_width: usize, dest_height: usize) {
     println!("{}", file_path);
+    if let Ok(img) = image::open(file_path) {
+        let resized = img.resize(
+            dest_width as u32,
+            dest_height as u32,
+            image::imageops::FilterType::Lanczos3,
+        );
+        
+        let bg = img.resize_exact(
+            dest_width as u32,
+            dest_height as u32,
+            image::imageops::FilterType::Nearest,
+        )
+            .fast_blur(25.0);
+
+        let mut final_image = image::RgbImage::new(dest_width as u32, dest_height as u32);
+        image::imageops::overlay(&mut final_image, &bg.to_rgb8(), 0, 0);
+
+        let x = ((dest_width as i32) - (resized.width() as i32)) / 2;
+        let y = ((dest_height as i32) - (resized.height() as i32)) / 2;
+        image::imageops::overlay(&mut final_image, &resized.to_rgb8(), x as i64, y as i64);
+
+        let output_path = format!(
+            "/tmp/Tapety/{}", 
+            std::path::Path::new(file_path).file_name().unwrap().to_str().unwrap()
+        );
+        if let Err(e) = final_image.save(&output_path) {
+            eprintln!("Failed to save image {}: {}", output_path, e);
+        }
+    } else {
+        eprintln!("Failed to open image: {}", file_path);
+    }
 }
 
 fn get_path(args: &Args) -> String {
