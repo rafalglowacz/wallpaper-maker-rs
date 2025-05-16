@@ -1,8 +1,10 @@
 use clap::Parser;
 use std::fs;
+use std::path::Path;
 use regex::Regex;
 use std::thread;
 use std::time::Duration;
+use image::{imageops, RgbImage};
 
 #[derive(Parser, Debug)]
 #[command(version)]
@@ -48,27 +50,28 @@ fn make_wallpaper(file_path: &str, dest_width: usize, dest_height: usize) {
         let resized = img.resize(
             dest_width as u32,
             dest_height as u32,
-            image::imageops::FilterType::Lanczos3,
+            imageops::FilterType::Lanczos3,
         );
         
         let bg = img.resize_exact(
             dest_width as u32,
             dest_height as u32,
-            image::imageops::FilterType::Nearest,
+            imageops::FilterType::Nearest,
         )
             .fast_blur(25.0);
 
-        let mut final_image = image::RgbImage::new(dest_width as u32, dest_height as u32);
-        image::imageops::overlay(&mut final_image, &bg.to_rgb8(), 0, 0);
+        let mut final_image = RgbImage::new(dest_width as u32, dest_height as u32);
+        imageops::overlay(&mut final_image, &bg.to_rgb8(), 0, 0);
 
         let x = ((dest_width as i32) - (resized.width() as i32)) / 2;
         let y = ((dest_height as i32) - (resized.height() as i32)) / 2;
-        image::imageops::overlay(&mut final_image, &resized.to_rgb8(), x as i64, y as i64);
+        imageops::overlay(&mut final_image, &resized.to_rgb8(), x as i64, y as i64);
 
         let output_path = format!(
             "/tmp/Tapety/{}", 
-            std::path::Path::new(file_path).file_name().unwrap().to_str().unwrap()
+            Path::new(file_path).file_name().unwrap().to_str().unwrap()
         );
+        
         if let Err(e) = final_image.save(&output_path) {
             eprintln!("Failed to save image {}: {}", output_path, e);
         }
