@@ -18,10 +18,15 @@ struct Args {
     force: bool,
 }
 
+struct Progress {
+    last_update: std::time::Instant,
+    last_percentage: usize,
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
-    let source = get_source_path(&args);
-    let target = ensure_target_directory(&source);
+    let source = get_source_dir(&args);
+    let target = ensure_target_dir(&source);
 
     println!("Reading directory: {}", source);
     
@@ -31,6 +36,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let image_pattern = Regex::new(r"\.(jpe?g|png|webp)$").unwrap();
+    let entries = fs::read_dir(&source)?;
+    let source_items = entries.count();
+    println!("Found {} items in source directory", source_items);
+
+    let mut progress = Progress {
+        last_update: std::time::Instant::now(),
+        last_percentage: 0,
+    };
+    let mut processed = 0;
 
     for entry in fs::read_dir(source)? {
         let entry = entry?;
@@ -38,14 +52,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Some(path_str) = path.to_str() {
             if image_pattern.is_match(path_str) {
                 make_wallpaper(path_str, &target, args.dest_width, args.dest_height);
+                processed += 1;
+
+                let percentage = (processed * 100) / source_items;
+                let elapsed = progress.last_update.elapsed().as_secs();
+
+                if (percentage % 5 == 0 && percentage > progress.last_percentage) || elapsed >= 5 {
+                    println!("Progress: {}%", percentage);
+                    progress.last_update = std::time::Instant::now();
+                    progress.last_percentage = percentage;
+                }
             }
         }
+    }
+    
+    if progress.last_percentage < 100 {
+        println!("Progress: 100%");
     }
 
     Ok(())
 }
 
-fn ensure_target_directory(source: &String) -> String {
+fn ensure_target_dir(source: &String) -> String {
     let path = Path::new(source);
     let parent = path.parent().unwrap();
     let dir_name = path.file_name().unwrap();
@@ -96,7 +124,7 @@ fn make_wallpaper(file_path: &str, target_dir: &str, dest_width: usize, dest_hei
     }
 }
 
-fn get_source_path(args: &Args) -> String {
+fn get_source_dir(args: &Args) -> String {
     let path = args.directory.trim_end_matches('/').to_string();
     shellexpand::tilde(path.as_str()).to_string()
 }
