@@ -45,17 +45,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         last_update: std::time::Instant::now(),
         last_percentage: 0,
     };
-    let mut processed = 0;
 
-    for entry in fs::read_dir(source)? {
+    for (i, entry) in fs::read_dir(source)?.enumerate() {
         let entry = entry?;
         let path = entry.path();
         if let Some(path_str) = path.to_str() {
             if image_pattern.is_match(path_str) {
                 make_wallpaper(path_str, &target, args.dest_width, args.dest_height, args.force);
-                processed += 1;
 
-                let percentage = (processed * 100) / source_items;
+                let percentage = (i + 1) * 100 / source_items;
                 let elapsed = progress.last_update.elapsed().as_secs();
 
                 if (percentage % 5 == 0 && percentage > progress.last_percentage) || elapsed >= 5 {
