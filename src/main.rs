@@ -37,14 +37,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let image_pattern = Regex::new(r"\.(jpe?g|png|webp)$").unwrap();
-    let entries = fs::read_dir(&source)?;
-    let source_items = entries.count();
-    println!("Found {} items in source directory", source_items);
-
-    let mut progress = Progress {
-        last_update: std::time::Instant::now(),
-        last_percentage: 0,
-    };
+    let (source_item_count, mut progress) = init_progress(&source)?;
 
     for (i, entry) in fs::read_dir(source)?.enumerate() {
         let entry = entry?;
@@ -53,7 +46,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             if image_pattern.is_match(path_str) {
                 make_wallpaper(path_str, &target, args.dest_width, args.dest_height, args.force);
 
-                let percentage = (i + 1) * 100 / source_items;
+                let percentage = (i + 1) * 100 / source_item_count;
                 let elapsed = progress.last_update.elapsed().as_secs();
 
                 if (percentage % 5 == 0 && percentage > progress.last_percentage) || elapsed >= 5 {
@@ -138,4 +131,17 @@ fn ensure_target_dir(source: &String) -> Result<String, Box<dyn Error>> {
     }
 
     Ok(adjusted_path.to_str().unwrap().to_string())
+}
+
+fn init_progress(source: &str) -> Result<(usize, Progress), Box<dyn Error>> {
+    let entries = fs::read_dir(&source)?;
+    let source_items = entries.count();
+    println!("Found {} items in source directory", source_items);
+
+    let progress = Progress {
+        last_update: std::time::Instant::now(),
+        last_percentage: 0,
+    };
+
+    Ok((source_items, progress))
 }
