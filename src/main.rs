@@ -1,3 +1,4 @@
+use std::error::Error;
 use clap::Parser;
 use std::fs;
 use std::path::Path;
@@ -23,10 +24,10 @@ struct Progress {
     last_percentage: usize,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
     let source = get_source_dir(&args);
-    let target = ensure_target_dir(&source);
+    let target = ensure_target_dir(&source)?;
 
     println!("Reading directory: {}", source);
     
@@ -126,16 +127,17 @@ fn get_source_dir(args: &Args) -> String {
     shellexpand::tilde(path.as_str()).to_string()
 }
 
-fn ensure_target_dir(source: &String) -> String {
+fn ensure_target_dir(source: &String) -> Result<String, Box<dyn Error>> {
     let path = Path::new(source);
-    let parent = path.parent().unwrap();
-    let dir_name = path.file_name().unwrap();
+    let parent = path.parent().ok_or("Source path has no parent directory.")?;
+    let dir_name = path.file_name().ok_or("Source path has no file name.")?;
 
-    let adjusted_path = parent.join(format!("{} - adjusted", dir_name.to_str().unwrap()));
+    let dir_name_str = dir_name.to_str().ok_or("Directory name contains invalid characters.")?;
+    let adjusted_path = parent.join(format!("{} - adjusted", dir_name_str));
 
     if !adjusted_path.exists() {
-        fs::create_dir_all(&adjusted_path).unwrap();
+        fs::create_dir_all(&adjusted_path)?;
     }
 
-    adjusted_path.to_str().unwrap().to_string()
+    Ok(adjusted_path.to_str().unwrap().to_string())
 }
