@@ -60,8 +60,6 @@ fn make_wallpaper(
     dest_height: usize,
     force: bool,
 ) {
-    println!("{}", file_path);
-
     let output_path = format!(
         // I'm adding the "adjusted -" prefix just in case I mess something up
         // that would result in overwriting the original files. It shouldn't
@@ -74,6 +72,8 @@ fn make_wallpaper(
     if Path::new(&output_path).exists() && !force {
         return
     }
+
+    println!("{}", file_path);
 
     if let Ok(img) = image::open(file_path) {
         let resized = img.resize(
