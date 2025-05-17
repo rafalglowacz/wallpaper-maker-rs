@@ -51,7 +51,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let path = entry.path();
         if let Some(path_str) = path.to_str() {
             if image_pattern.is_match(path_str) {
-                make_wallpaper(path_str, &target, args.dest_width, args.dest_height);
+                make_wallpaper(path_str, &target, args.dest_width, args.dest_height, args.force);
                 processed += 1;
 
                 let percentage = (processed * 100) / source_items;
@@ -87,8 +87,25 @@ fn ensure_target_dir(source: &String) -> String {
     adjusted_path.to_str().unwrap().to_string()
 }
 
-fn make_wallpaper(file_path: &str, target_dir: &str, dest_width: usize, dest_height: usize) {
+fn make_wallpaper(
+    file_path: &str, 
+    target_dir: &str, 
+    dest_width: usize, 
+    dest_height: usize,
+    force: bool,
+) {
     println!("{}", file_path);
+
+    let output_path = format!(
+        "{}/adjusted - {}",
+        target_dir,
+        Path::new(file_path).file_name().unwrap().to_str().unwrap()
+    );
+    
+    if Path::new(&output_path).exists() && !force {
+        return
+    }
+    
     if let Ok(img) = image::open(file_path) {
         let resized = img.resize(
             dest_width as u32,
@@ -109,12 +126,6 @@ fn make_wallpaper(file_path: &str, target_dir: &str, dest_width: usize, dest_hei
         let x = ((dest_width as i32) - (resized.width() as i32)) / 2;
         let y = ((dest_height as i32) - (resized.height() as i32)) / 2;
         imageops::overlay(&mut final_image, &resized.to_rgb8(), x as i64, y as i64);
-
-        let output_path = format!(
-            "{}/adjusted - {}",
-            target_dir,
-            Path::new(file_path).file_name().unwrap().to_str().unwrap()
-        );
         
         if let Err(e) = final_image.save(&output_path) {
             eprintln!("Failed to save image {}: {}", output_path, e);
