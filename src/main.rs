@@ -1,11 +1,11 @@
-use std::error::Error;
 use clap::Parser;
+use image::{imageops, RgbImage};
+use regex::Regex;
+use std::error::Error;
 use std::fs;
 use std::path::Path;
-use regex::Regex;
 use std::thread;
 use std::time::Duration;
-use image::{imageops, RgbImage};
 
 #[derive(Parser, Debug)]
 #[command(version)]
@@ -105,7 +105,7 @@ fn make_wallpaper(
             dest_height as u32,
             imageops::FilterType::Nearest,
         )
-             .blur(25.0);
+            .blur(25.0);
 
         let mut final_image = RgbImage::new(dest_width as u32, dest_height as u32);
         imageops::overlay(&mut final_image, &bg.to_rgb8(), 0, 0);
