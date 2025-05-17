@@ -73,20 +73,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn ensure_target_dir(source: &String) -> String {
-    let path = Path::new(source);
-    let parent = path.parent().unwrap();
-    let dir_name = path.file_name().unwrap();
-    
-    let adjusted_path = parent.join(format!("{} - adjusted", dir_name.to_str().unwrap()));
-    
-    if !adjusted_path.exists() {
-        fs::create_dir_all(&adjusted_path).unwrap();
-    }
-    
-    adjusted_path.to_str().unwrap().to_string()
-}
-
 fn make_wallpaper(
     file_path: &str,
     target_dir: &str,
@@ -138,4 +124,18 @@ fn make_wallpaper(
 fn get_source_dir(args: &Args) -> String {
     let path = args.directory.trim_end_matches('/').to_string();
     shellexpand::tilde(path.as_str()).to_string()
+}
+
+fn ensure_target_dir(source: &String) -> String {
+    let path = Path::new(source);
+    let parent = path.parent().unwrap();
+    let dir_name = path.file_name().unwrap();
+
+    let adjusted_path = parent.join(format!("{} - adjusted", dir_name.to_str().unwrap()));
+
+    if !adjusted_path.exists() {
+        fs::create_dir_all(&adjusted_path).unwrap();
+    }
+
+    adjusted_path.to_str().unwrap().to_string()
 }
