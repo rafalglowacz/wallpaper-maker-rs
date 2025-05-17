@@ -29,12 +29,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let source = get_source_dir(&args);
     let target = ensure_target_dir(&source)?;
 
+    maybe_sleep(args.delay);
     println!("Reading directory: {}", source);
-    
-    if args.delay > 0 {
-        println!("Waiting {} seconds...", args.delay);
-        thread::sleep(Duration::from_secs(args.delay as u64));
-    }
 
     let image_pattern = Regex::new(r"\.(jpe?g|png|webp)$").unwrap();
     let (source_item_count, mut progress) = init_progress(&source)?;
@@ -143,4 +139,11 @@ fn init_progress(source: &str) -> Result<(usize, Progress), Box<dyn Error>> {
     };
 
     Ok((source_items, progress))
+}
+
+fn maybe_sleep(delay: usize) {
+    if delay > 0 {
+        println!("Waiting {} seconds...", delay);
+        thread::sleep(Duration::from_secs(delay as u64));
+    }
 }
