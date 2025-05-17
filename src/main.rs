@@ -40,20 +40,19 @@ fn main() -> Result<(), Box<dyn Error>> {
     let (source_item_count, mut progress) = init_progress(&source)?;
 
     for (i, entry) in fs::read_dir(source)?.enumerate() {
-        let entry = entry?;
-        let path = entry.path();
-        if let Some(path_str) = path.to_str() {
-            if image_pattern.is_match(path_str) {
-                make_wallpaper(path_str, &target, args.dest_width, args.dest_height, args.force);
+        if let Some(path_str) = entry?.path().to_str() {
+            if !image_pattern.is_match(path_str) {
+                continue;
+            }
+            
+            make_wallpaper(path_str, &target, args.dest_width, args.dest_height, args.force);
+            let percentage = (i + 1) * 100 / source_item_count;
+            let elapsed = progress.last_update.elapsed().as_secs();
 
-                let percentage = (i + 1) * 100 / source_item_count;
-                let elapsed = progress.last_update.elapsed().as_secs();
-
-                if (percentage % 5 == 0 && percentage > progress.last_percentage) || elapsed >= 5 {
-                    println!("Progress: {}%", percentage);
-                    progress.last_update = std::time::Instant::now();
-                    progress.last_percentage = percentage;
-                }
+            if (percentage % 5 == 0 && percentage > progress.last_percentage) || elapsed >= 5 {
+                println!("Progress: {}%", percentage);
+                progress.last_update = std::time::Instant::now();
+                progress.last_percentage = percentage;
             }
         }
     }
