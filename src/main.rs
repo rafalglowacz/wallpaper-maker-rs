@@ -63,6 +63,9 @@ fn make_wallpaper(
     println!("{}", file_path);
 
     let output_path = format!(
+        // I'm adding the "adjusted -" prefix just in case I mess something up
+        // that would result in overwriting the original files. It shouldn't
+        // happen, though, since we should be in the target directory. 
         "{}/adjusted - {}",
         target_dir,
         Path::new(file_path).file_name().unwrap().to_str().unwrap()
