@@ -87,7 +87,7 @@ fn make_wallpaper(
             dest_height as u32,
             imageops::FilterType::Nearest,
         )
-            .blur(25.0);
+            .blur(50.0);
 
         let mut final_image = RgbImage::new(dest_width as u32, dest_height as u32);
         imageops::overlay(&mut final_image, &bg.to_rgb8(), 0, 0);
