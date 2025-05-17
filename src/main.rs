@@ -42,14 +42,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
             
             make_wallpaper(path_str, &target, args.dest_width, args.dest_height, args.force);
-            let percentage = (i + 1) * 100 / source_item_count;
-            let elapsed = progress.last_update.elapsed().as_secs();
-
-            if (percentage % 5 == 0 && percentage > progress.last_percentage) || elapsed >= 5 {
-                println!("Progress: {}%", percentage);
-                progress.last_update = std::time::Instant::now();
-                progress.last_percentage = percentage;
-            }
+            report_percentage(i, source_item_count, &mut progress);
         }
     }
 
@@ -145,5 +138,16 @@ fn maybe_sleep(delay: usize) {
     if delay > 0 {
         println!("Waiting {} seconds...", delay);
         thread::sleep(Duration::from_secs(delay as u64));
+    }
+}
+
+fn report_percentage(i: usize, source_item_count: usize, progress: &mut Progress) {
+    let percentage = (i + 1) * 100 / source_item_count;
+    let elapsed = progress.last_update.elapsed().as_secs();
+
+    if (percentage % 5 == 0 && percentage > progress.last_percentage) || elapsed >= 5 {
+        println!("Progress: {}%", percentage);
+        progress.last_update = std::time::Instant::now();
+        progress.last_percentage = percentage;
     }
 }
