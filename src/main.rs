@@ -65,7 +65,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-    
+
     if progress.last_percentage < 100 {
         println!("Progress: 100%");
     }
@@ -88,9 +88,9 @@ fn ensure_target_dir(source: &String) -> String {
 }
 
 fn make_wallpaper(
-    file_path: &str, 
-    target_dir: &str, 
-    dest_width: usize, 
+    file_path: &str,
+    target_dir: &str,
+    dest_width: usize,
     dest_height: usize,
     force: bool,
 ) {
@@ -101,24 +101,24 @@ fn make_wallpaper(
         target_dir,
         Path::new(file_path).file_name().unwrap().to_str().unwrap()
     );
-    
+
     if Path::new(&output_path).exists() && !force {
         return
     }
-    
+
     if let Ok(img) = image::open(file_path) {
         let resized = img.resize(
             dest_width as u32,
             dest_height as u32,
             imageops::FilterType::Lanczos3,
         );
-        
+
         let bg = img.resize_exact(
             dest_width as u32,
             dest_height as u32,
             imageops::FilterType::Nearest,
         )
-            .fast_blur(25.0);
+             .blur(25.0);
 
         let mut final_image = RgbImage::new(dest_width as u32, dest_height as u32);
         imageops::overlay(&mut final_image, &bg.to_rgb8(), 0, 0);
@@ -126,7 +126,7 @@ fn make_wallpaper(
         let x = ((dest_width as i32) - (resized.width() as i32)) / 2;
         let y = ((dest_height as i32) - (resized.height() as i32)) / 2;
         imageops::overlay(&mut final_image, &resized.to_rgb8(), x as i64, y as i64);
-        
+
         if let Err(e) = final_image.save(&output_path) {
             eprintln!("Failed to save image {}: {}", output_path, e);
         }
