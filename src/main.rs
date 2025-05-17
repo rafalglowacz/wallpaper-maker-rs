@@ -130,10 +130,10 @@ fn get_source_dir(args: &Args) -> String {
 fn ensure_target_dir(source: &String) -> Result<String, Box<dyn Error>> {
     let path = Path::new(source);
     let parent = path.parent().ok_or("Source path has no parent directory.")?;
-    let dir_name = path.file_name().ok_or("Source path has no file name.")?;
+    let dir_name = path.file_name().ok_or("Source path has no file name.")?
+        .to_str().ok_or("Directory name contains invalid characters.")?;
 
-    let dir_name_str = dir_name.to_str().ok_or("Directory name contains invalid characters.")?;
-    let adjusted_path = parent.join(format!("{} - adjusted", dir_name_str));
+    let adjusted_path = parent.join(format!("{} - adjusted", dir_name));
 
     if !adjusted_path.exists() {
         fs::create_dir_all(&adjusted_path)?;
